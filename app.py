@@ -1,6 +1,7 @@
-from flask import Flask, render_template, request
+from flask import Flask  # импортируем из библиотеки flask класс Flask
+from flask import jsonify, request
 
-app = Flask(__name__)
+app = Flask(__name__)  # создаем объект app на основе класса Flask, (__name__) - имя нашего файла
 
 # use Python Dict as DB
 storage = dict()
@@ -20,23 +21,12 @@ storage.update(
 
 @app.route('/')
 def hello_world():
-    return 'Hello, World!'
+    return jsonify({'msg': 'Hello, World!'})
 
 
 @app.route('/users/list/')
 def user_list():
-    username_list = storage.keys()
-    return '<br>'.join(username_list)
-
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'GET':
-        return render_template('create.html')
-    if request.method == 'POST':
-        username = request.form['username']
-        storage.update({username: {}})
-        return 'created'
+    return jsonify(storage)
 
 
 @app.route('/users/delete/<username>')
@@ -44,6 +34,25 @@ def delete_user(username):
     old_users = storage.copy()
     storage.pop(username, False)
     if username in old_users:
-        return f'User {username} was deleted'
+        return jsonify(message='User  was deleted')
     else:
-        return 'User doesnt exist or already deleted'
+        return jsonify (message='User doesnt exist or already deleted')
+
+
+@app.route('/users/add/', methods=["POST"])
+def add_user_list():
+    data = request.get_json()  # get json return dict loaded from json body
+    try:
+        username = data['username']
+    except Exception as e:
+        response = {'msg': f'The field {e} is required'}
+        username = False
+
+    if username:
+        storage[username] = dict()
+        response = {'msg': 'user was added'}
+    return jsonify(response)
+
+
+if __name__ == '__main__':  # если запускается через файл app.py, то проект должен запуститься как flask приложение
+    app.run(debug=True)  # запускается локальный сервер
